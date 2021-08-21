@@ -12,7 +12,6 @@ package.json.bak
 
 # config file
 .vscode
-.env
 
 # debug
 npm-debug.log*
