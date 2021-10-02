@@ -6,7 +6,7 @@
       max-height: 110px;
       position: relative;
       border-radius: $border-radius-default;
-      box-shadow: $secondary-box-shadow;
+      box-shadow: $box-shadow-secondary;
       @include transition();
 
       &:hover {
@@ -333,3 +333,9 @@
 // .myShareCountWrapper:hover {
 //   color: blue;
 // }
+
+//  SelectOptions styple overwrite
+
+.select-option__menu {
+  z-index: 2 !important;
+}

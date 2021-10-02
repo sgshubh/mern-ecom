@@ -70,6 +70,7 @@ router.post('/login', (req, res) => {
 });
 
 router.post('/register', (req, res) => {
+  console.log('REQ>>', req.body);
   const email = req.body.email;
   const firstName = req.body.firstName;
   const lastName = req.body.lastName;
@@ -126,6 +127,7 @@ router.post('/register', (req, res) => {
         user.password = hash;
 
         user.save(async (err, user) => {
+          console.log(err, user);
           if (err) {
             return res.status(400).json({
               error: 'Your request could not be processed. Please try again.'

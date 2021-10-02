@@ -53,7 +53,7 @@ router.get('/:slug', async (req, res) => {
   try {
     const productDoc = await Product.findOne({ slug: req.params.slug });
 
-    if (!productDoc || productDoc?.brand?.isActive === false) {
+    if (!productDoc || (productDoc && productDoc?.brand?.isActive === false)) {
       return res.status(404).json({
         message: 'No reviews for this product.'
       });
@@ -149,20 +149,20 @@ router.put('/reject/:reviewId', auth, async (req, res) => {
   }
 });
 
-router.delete('/delete/:id', (req, res) => {
-  Review.deleteOne({ _id: req.params.id }, (err, data) => {
-    if (err) {
-      return res.status(400).json({
-        error: 'Your request could not be processed. Please try again.'
-      });
-    }
+router.delete('/delete/:id', async (req, res) => {
+  try {
+    const review = await Review.deleteOne({ _id: req.params.id });
 
     res.status(200).json({
       success: true,
       message: `review has been deleted successfully!`,
-      review: data
+      review
     });
-  });
+  } catch (error) {
+    return res.status(400).json({
+      error: 'Your request could not be processed. Please try again.'
+    });
+  }
 });
 
 module.exports = router;

@@ -56,6 +56,10 @@
   font-size: 12px;
 }
 
+.fs-16 {
+  font-size: 16px;
+}
+
 .text-black {
   color: $black;
 }
@@ -111,7 +115,7 @@
 }
 
 .box-shadow-primary {
-  box-shadow: $primary-box-shadow;
+  box-shadow: $box-shadow-primary;
 }
 
 .box-link {

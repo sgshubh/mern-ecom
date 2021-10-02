@@ -22,7 +22,9 @@ import {
   ADD_PRODUCT,
   REMOVE_PRODUCT,
   FETCH_PRODUCTS_SELECT,
-  SET_PRODUCTS_LOADING
+  SET_PRODUCTS_LOADING,
+  SET_ADVANCED_FILTERS,
+  RESET_ADVANCED_FILTERS
 } from './constants';
 
 import handleError from '../../utils/error';
@@ -86,12 +88,32 @@ export const fetchProducts = () => {
   };
 };
 
-// fetch store products api
-export const fetchStoreProducts = () => {
+// fetch store products by filterProducts api
+export const filterProducts = (n, v) => {
   return async (dispatch, getState) => {
     try {
+      n === undefined ? dispatch({ type: RESET_ADVANCED_FILTERS }) : '';
+
+      const s = getState().product.advancedFilters;
+      let payload = productsFilterOrganizer(n, v, s);
+
+      dispatch({ type: SET_ADVANCED_FILTERS, payload });
       dispatch({ type: SET_PRODUCTS_LOADING, payload: true });
-      const response = await axios.get(`/api/product/list`);
+
+      const sortOrder = getSortOrder(payload.order);
+
+      payload = { ...payload, sortOrder };
+
+      const response = await axios.post(`/api/product/list`, payload);
+
+      dispatch({
+        type: SET_ADVANCED_FILTERS,
+        payload: Object.assign(payload, {
+          pages: response.data.pages,
+          pageNumber: response.data.page,
+          totalProducts: response.data.totalProducts
+        })
+      });
       dispatch({
         type: FETCH_STORE_PRODUCTS,
         payload: response.data.products
@@ -111,11 +133,16 @@ export const fetchProduct = id => {
       const response = await axios.get(`/api/product/${id}`);
 
       const inventory = response.data.product.quantity;
-      if (response.data.product.brand) {
-        response.data.product.brand = formatSelectOptions([
-          response.data.product.brand
-        ])[0];
-      }
+
+      const brand = response.data.product.brand;
+      const isBrand = brand ? true : false;
+      const brandData = formatSelectOptions(
+        isBrand && [brand],
+        !isBrand,
+        'fetchProduct'
+      );
+
+      response.data.product.brand = brandData[0];
 
       const product = { ...response.data.product, inventory };
 
@@ -159,27 +186,17 @@ export const fetchBrandProducts = slug => {
     try {
       const response = await axios.get(`/api/product/list/brand/${slug}`);
 
+      const s = getState().product.advancedFilters;
       dispatch({
-        type: FETCH_PRODUCTS,
-        payload: response.data.products
+        type: SET_ADVANCED_FILTERS,
+        payload: Object.assign(s, {
+          pages: response.data.pages,
+          pageNumber: response.data.page,
+          totalProducts: response.data.totalProducts
+        })
       });
-    } catch (error) {
-      handleError(error, dispatch);
-    } finally {
-      dispatch({ type: SET_PRODUCTS_LOADING, payload: false });
-    }
-  };
-};
-
-export const fetchCategoryProducts = slug => {
-  return async (dispatch, getState) => {
-    dispatch({ type: SET_PRODUCTS_LOADING, payload: true });
-
-    try {
-      const response = await axios.get(`/api/product/list/category/${slug}`);
-
       dispatch({
-        type: FETCH_PRODUCTS,
+        type: FETCH_STORE_PRODUCTS,
         payload: response.data.products
       });
     } catch (error) {
@@ -218,7 +235,6 @@ export const addProduct = () => {
         quantity: 'required|numeric',
         price: 'required|numeric',
         taxable: 'required',
-        brand: 'required',
         image: 'required'
       };
 
@@ -254,7 +270,6 @@ export const addProduct = () => {
         'required.quantity': 'Quantity is required.',
         'required.price': 'Price is required.',
         'required.taxable': 'Taxable is required.',
-        'required.brand': 'Brand is required.',
         'required.image': 'Please upload files with jpg, jpeg, png format.'
       });
 
@@ -263,9 +278,13 @@ export const addProduct = () => {
       }
       const formData = new FormData();
       if (newProduct.image) {
-        for (var key in newProduct) {
+        for (const key in newProduct) {
           if (newProduct.hasOwnProperty(key)) {
-            formData.append(key, newProduct[key]);
+            if (key === 'brand' && newProduct[key] === null) {
+              continue;
+            } else {
+              formData.set(key, newProduct[key]);
+            }
           }
         }
       }
@@ -304,8 +323,7 @@ export const updateProduct = () => {
         description: 'required|max:200',
         quantity: 'required|numeric',
         price: 'required|numeric',
-        taxable: 'required',
-        brand: 'required'
+        taxable: 'required'
       };
 
       const product = getState().product.product;
@@ -328,8 +346,7 @@ export const updateProduct = () => {
           'Description may not be greater than 200 characters.',
         'required.quantity': 'Quantity is required.',
         'required.price': 'Price is required.',
-        'required.taxable': 'Taxable is required.',
-        'required.brand': 'Brand is required.'
+        'required.taxable': 'Taxable is required.'
       });
 
       if (!isValid) {
@@ -409,4 +426,107 @@ export const deleteProduct = id => {
       handleError(error, dispatch);
     }
   };
+};
+
+// TODO: Need improvement
+const productsFilterOrganizer = (n, v, s) => {
+  switch (n) {
+    case 'category':
+      return {
+        name: s.name,
+        category: v,
+        brand: s.brand,
+        min: s.min,
+        max: s.max,
+        rating: s.rating,
+        order: s.order,
+        pageNumber: 1 //s.pageNumber
+      };
+    case 'brand':
+      return {
+        name: s.name,
+        category: s.category,
+        brand: v,
+        min: s.min,
+        max: s.max,
+        rating: s.rating,
+        order: s.order,
+        pageNumber: s.pageNumber
+      };
+    case 'sorting':
+      return {
+        name: s.name,
+        category: s.category,
+        brand: s.brand,
+        min: s.min,
+        max: s.max,
+        rating: s.rating,
+        order: v,
+        pageNumber: s.pageNumber
+      };
+    case 'price':
+      return {
+        name: s.name,
+        category: s.category,
+        brand: s.brand,
+        min: v[0],
+        max: v[1],
+        rating: s.rating,
+        order: s.order,
+        pageNumber: s.pageNumber
+      };
+    case 'rating':
+      return {
+        name: s.name,
+        category: s.category,
+        brand: s.brand,
+        min: s.min,
+        max: s.max,
+        rating: v,
+        order: s.order,
+        pageNumber: s.pageNumber
+      };
+    case 'pagination':
+      return {
+        name: s.name,
+        category: s.category,
+        brand: s.brand,
+        min: s.min,
+        max: s.max,
+        rating: s.rating,
+        order: s.order,
+        pageNumber: v
+      };
+    default:
+      return {
+        name: s.name,
+        category: s.category,
+        brand: s.brand,
+        min: s.min,
+        max: s.max,
+        rating: s.rating,
+        order: s.order,
+        pageNumber: s.pageNumber
+      };
+  }
+};
+
+const getSortOrder = value => {
+  let sortOrder = {};
+  switch (value) {
+    case 0:
+      sortOrder._id = -1;
+      break;
+    case 1:
+      sortOrder.price = -1;
+      break;
+    case 2:
+      sortOrder.price = 1;
+      break;
+
+    default:
+      break;
+  }
+
+  return sortOrder;
 };

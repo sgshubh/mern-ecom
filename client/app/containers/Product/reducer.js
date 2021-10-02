@@ -20,7 +20,9 @@ import {
   ADD_PRODUCT,
   REMOVE_PRODUCT,
   FETCH_PRODUCTS_SELECT,
-  SET_PRODUCTS_LOADING
+  SET_PRODUCTS_LOADING,
+  SET_ADVANCED_FILTERS,
+  RESET_ADVANCED_FILTERS
 } from './constants';
 
 const initialState = {
@@ -51,7 +53,19 @@ const initialState = {
   },
   formErrors: {},
   editFormErrors: {},
-  shopFormErrors: {}
+  shopFormErrors: {},
+  advancedFilters: {
+    name: 'all',
+    category: 'all',
+    brand: 'all',
+    min: 1,
+    max: 500,
+    rating: 0,
+    order: 0,
+    pageNumber: 1,
+    pages: 1,
+    totalProducts: 0
+  }
 };
 
 const productReducer = (state = initialState, action) => {
@@ -170,6 +184,30 @@ const productReducer = (state = initialState, action) => {
           quantity: 1
         },
         shopFormErrors: {}
+      };
+    case SET_ADVANCED_FILTERS:
+      return {
+        ...state,
+        advancedFilters: {
+          ...state.advancedFilters,
+          ...action.payload
+        }
+      };
+    case RESET_ADVANCED_FILTERS:
+      return {
+        ...state,
+        advancedFilters: {
+          name: 'all',
+          category: 'all',
+          brand: 'all',
+          min: 1,
+          max: 500,
+          rating: 0,
+          order: 0,
+          pageNumber: 1,
+          pages: 1,
+          totalProducts: 0
+        }
       };
     default:
       return state;

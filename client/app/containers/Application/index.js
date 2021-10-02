@@ -106,7 +106,8 @@ class Application extends React.PureComponent {
 
 const mapStateToProps = state => {
   return {
-    authenticated: state.authentication.authenticated
+    authenticated: state.authentication.authenticated,
+    products: state.product.storeProducts
   };
 };
 
