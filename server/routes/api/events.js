@@ -11,7 +11,7 @@ router.post('/addEventType', (req, res) => {
   const isMostlyUsed = req.body.is_mostly_used;
 
   if (!typeName) {
-    return res.status(400).json({ error: 'You must enter an Event Type.' });
+    return res.status(400).json({ error: 'You must enter an Event Type!' });
   }
 
   if (!isMostlyUsed) {
